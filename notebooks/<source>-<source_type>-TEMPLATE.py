@@ -23,8 +23,6 @@ dbutils.widgets.text("input_record_limit", "100", "Input Record Limit")
 
 # COMMAND ----------
 
-from dasl_client.preset_development import PreviewParameters, PreviewEngine
-
 # Get widget values
 yaml_path = dbutils.widgets.get("yaml_path")
 data_source = dbutils.widgets.get("data_source")
@@ -55,7 +53,12 @@ elif data_source == "table":
     })
 
 print("Widget Configuration Values:")
-print(widget_config)
+for key, value in widget_config.items():
+    print(f"  {key}: {value}")
+
+# COMMAND ----------
+
+from dasl_client.preset_development import PreviewParameters, PreviewEngine
 
 # Load YAML preset file
 with open(yaml_path, 'r') as file:
