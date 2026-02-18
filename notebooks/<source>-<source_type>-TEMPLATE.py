@@ -35,6 +35,28 @@ autoloader_temp_checkpoint_location = dbutils.widgets.get("autoloader_temp_check
 target_catalog_db = dbutils.widgets.get("target_catalog_db")
 input_record_limit = int(dbutils.widgets.get("input_record_limit"))
 
+# Display widget values for verification
+widget_config = {
+    "yaml_path": yaml_path,
+    "data_source": data_source,
+    "target_catalog_db": target_catalog_db,
+    "input_record_limit": input_record_limit
+}
+
+if data_source == "autoloader":
+    widget_config.update({
+        "autoloader_location": autoloader_location,
+        "autoloader_temp_schema_location": autoloader_temp_schema_location,
+        "autoloader_temp_checkpoint_location": autoloader_temp_checkpoint_location
+    })
+elif data_source == "table":
+    widget_config.update({
+        "table_name": table_name
+    })
+
+print("Widget Configuration Values:")
+print(widget_config)
+
 # Load YAML preset file
 with open(yaml_path, 'r') as file:
     yaml_string = file.read()
