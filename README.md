@@ -19,6 +19,7 @@ For comprehensive preset development documentation, see:
 - [Preset Development Landing Page](https://docs.sl.antimatter.io/ingest-data/presets/preset-development/preset-dev-landing-page)
 - [Preset Structure Guide](https://docs.sl.antimatter.io/ingest-data/presets/preset-development/preset-structure)
 - [Preset Template](https://docs.sl.antimatter.io/ingest-data/presets/preset-development/preset-template)
+- [DASL Client Documentation](https://antimatter-dasl-client.readthedocs-hosted.com/en/latest/) - Python client library for interacting with DASL services
 
 ## Repository Structure
 
