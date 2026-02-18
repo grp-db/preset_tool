@@ -279,4 +279,4 @@ For issues, questions, or feature requests related to:
 
 **Copyright © Databricks, Inc.**
 
-This Library is developed and maintained by Databricks & Antimatter.
+DASL Preset Dev Tool is developed and maintained by Databricks & Antimatter.
