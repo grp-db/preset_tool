@@ -2,6 +2,30 @@
 
 Databricks Antimatter Security Lakehouse is a preset development tool for interactive testing and preparation of cyber data pipelines before deployment to production. The [DSL Lite](https://github.com/grp-db/dsl_lite) accelerator can be used to deploy YAMLs built via DASL as Spark data pipelines.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Purpose](#purpose)
+- [Documentation](#documentation)
+- [Repository Structure](#repository-structure)
+- [Dependencies](#dependencies)
+  - [Current Versions](#current-versions)
+  - [Installing/Updating Dependencies](#installingupdating-dependencies)
+- [Getting Started](#getting-started)
+  - [1. Create a New Preset](#1-create-a-new-preset)
+  - [2. Test Your Preset](#2-test-your-preset)
+  - [3. Deploy to Production](#3-deploy-to-production)
+- [Usage Examples](#usage-examples)
+  - [Autoloader Mode (File-based Ingestion)](#autoloader-mode-file-based-ingestion)
+  - [Table Mode (Delta Table Ingestion)](#table-mode-delta-table-ingestion)
+- [Known Bugs](#known-bugs)
+  - [1. `_metadata.file_path` Not Supported](#1-_metadatafile_path-not-supported)
+  - [2. `from_table()` Requires Empty Temp Locations](#2-from_table-requires-empty-temp-locations)
+  - [3. `UNSUPPORTED_OPERATION: data type is not supported` Error](#3-unsupported_operation-data-type-is-not-supported-error)
+- [Related Projects](#related-projects)
+- [Support](#support)
+- [Copyright](#copyright)
+
 ## Overview
 
 This repository provides a local development workflow for creating, testing, and iterating on preset configurations. Use the interactive notebook-based tool to preview transformations, validate OCSF schema outputs, and debug preset logic before deploying to your production pipeline.
