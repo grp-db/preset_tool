@@ -1,0 +1,84 @@
+name: <source>_<source_type>
+description: ""
+title: ""
+author: ""
+autoloader:
+  inputs:
+  - # CHANGE ME! /Volumes/logs/<SOURCE>/<SOURCE_TYPE>/
+  format: <...>
+  cloudFiles:
+    schemaHints: ""
+
+bronze:
+  name: <>
+  preTransform:
+    -
+      - "*"
+      # - "_metadata.file_path"
+      - ... as time
+      - CAST(time AS DATE) as date
+      # - ... as host  # Optional: device hostname (if present)
+      - CAST('<source>' AS STRING) AS source
+      - CAST('<source_type>' AS STRING) AS sourcetype
+      - CURRENT_TIMESTAMP() as processed_time
+silver:
+  transform:
+    - name: <>
+      fields:
+        - name: <>
+          expr: ...
+        - name: <>
+          literal: ...
+        - name: <>
+          from: ...
+      utils:
+        unreferencedColumns:
+          preserve: true|false
+gold:
+  - name: <>
+    input: <>
+    # catalog: my_catalog  # Optional: Unity Catalog catalog name
+    # database: my_database  # Optional: database name (required if catalog is specified)
+    filter: ...
+    fields:
+      - name: category_uid
+        expr: CAST('<#>' AS INT)
+      - name: category_name
+        literal: <...>
+      - name: class_uid
+        expr: CAST('<#>' AS INT)
+      - name: class_name
+        literal: <...>
+...
+- name:
+  literal|from|expr: ...
+...
+      - name: metadata.version
+        literal: "1.7.0"
+      - name: metadata.product.name
+        literal: 
+      - name: metadata.product.vendor_name
+        literal: 
+      - name: metadata.log_provider
+        literal: <source>
+      - name: metadata.log_name
+        literal: <source_type>
+      - name: metadata.log_format
+        literal: <syslog|json|csv|txt>
+      - name: metadata.log_version
+        literal: "<source>@<source_type>:version@1.0"
+      - name: metadata.processed_time
+        expr: CURRENT_TIMESTAMP()
+      - name: metadata.logged_time
+        from: time
+      - name: raw_data
+        expr: ...
+      - name: unmapped
+        expr: |
+          CAST(
+            to_json(
+              named_struct(
+                'key', value
+              )
+            )
+          AS VARIANT)
