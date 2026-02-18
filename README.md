@@ -25,10 +25,10 @@ For comprehensive preset development documentation, see:
 ```
 preset_tool/
 ├── notebooks/              # Databricks notebooks for interactive preset testing
-│   ├── <source>-<source_type>.py-TEMPLATE
+│   ├── <source>-<source_type>-TEMPLATE.py
 │   └── <source>-<source_type>.py
 ├── yaml/                   # Preset YAML configuration files
-│   ├── <source>-<source_type>.yaml-TEMPLATE
+│   ├── <source>-<source_type>-TEMPLATE.yaml
 │   └── <source>-<source_type>.yaml
 ├── raw_logs/               # Sample log files for testing
 │   └── <source>-<source_type>-sample.*
@@ -71,8 +71,8 @@ The notebooks automatically install these libraries from the local `lib/` direct
 
 1. Copy the template files:
    ```bash
-   cp notebooks/<source>-<source_type>.py-TEMPLATE notebooks/<source>-<source_type>.py
-   cp yaml/<source>-<source_type>.yaml-TEMPLATE yaml/<source>-<source_type>.yaml
+   cp notebooks/<source>-<source_type>-TEMPLATE.py notebooks/<source>-<source_type>.py
+   cp yaml/<source>-<source_type>-TEMPLATE.yaml yaml/<source>-<source_type>.yaml
    ```
 
 2. Add sample log files to `raw_logs/` directory
