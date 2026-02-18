@@ -26,7 +26,8 @@ For comprehensive preset development documentation, see:
 ```
 preset_tool/
 ├── notebooks/              # Databricks notebooks for interactive preset testing
-│   ├── <source>-<source_type>-TEMPLATE.py
+│   ├── <source>-<source_type>-TEMPLATE-autoloader.py  # Template for file-based ingestion
+│   ├── <source>-<source_type>-TEMPLATE-table.py       # Template for table-based ingestion
 │   └── <source>-<source_type>.py
 ├── yaml/                   # Preset YAML configuration files
 │   ├── <source>-<source_type>-TEMPLATE.yaml
@@ -70,37 +71,43 @@ The notebooks automatically install these libraries from the local `lib/` direct
 
 ### 1. Create a New Preset
 
-1. Copy the template files:
-   ```bash
-   cp notebooks/<source>-<source_type>-TEMPLATE.py notebooks/<source>-<source_type>.py
-   cp yaml/<source>-<source_type>-TEMPLATE.yaml yaml/<source>-<source_type>.yaml
-   ```
+1. Choose the appropriate template:
+   - **`<source>-<source_type>-TEMPLATE-autoloader.py`** - For reading from file-based sources (autoloader)
+   - **`<source>-<source_type>-TEMPLATE-table.py`** - For reading from existing Delta tables
 
-2. Add sample log files to `raw_logs/` directory
+2. **Import the template into Databricks**:
+   - **⚠️ IMPORTANT: Do NOT clone the template notebook in Databricks!** Cloning can cause `UNSUPPORTED_OPERATION` errors due to retained metadata/state.
+   - **Recommended approach**: 
+     1. Create a **new notebook** in Databricks
+     2. Open the template file (e.g., `notebooks/<source>-<source_type>-TEMPLATE-autoloader.py`) in your editor
+     3. Copy all the code from the template
+     4. Paste it into your new Databricks notebook
+   - Alternatively, you can copy the template file locally:
+     ```bash
+     cp notebooks/<source>-<source_type>-TEMPLATE-autoloader.py notebooks/<source>-<source_type>.py
+     # OR
+     cp notebooks/<source>-<source_type>-TEMPLATE-table.py notebooks/<source>-<source_type>.py
+     cp yaml/<source>-<source_type>-TEMPLATE.yaml yaml/<source>-<source_type>.yaml
+     ```
 
-3. Update the notebook:
+3. Add sample log files to `raw_logs/` directory (if using autoloader mode)
+
+4. Update the notebook:
    - Set your user path in the `%pip install` command
-   - Fill in the widget values at the top of the notebook (defaults are empty strings)
+   - Update all values marked with `# CHANGE ME!!!`
 
-4. Configure the YAML preset file (see [Preset Structure Guide](https://docs.sl.antimatter.io/ingest-data/presets/preset-development/preset-structure))
+5. Configure the YAML preset file (see [Preset Structure Guide](https://docs.sl.antimatter.io/ingest-data/presets/preset-development/preset-structure))
 
 ### 2. Test Your Preset
 
-1. Open the notebook in Databricks
-2. Configure parameters using the widgets at the top of the notebook (all defaults are empty strings - you must fill them in):
-   - **YAML Preset Path**: Path to your preset YAML file (e.g., `/Workspace/Users/<user>/preset_tool/yaml/<source>-<source_type>.yaml`)
-   - **Data Source Type**: Dropdown to select "autoloader" (read from files) or "table" (read from Delta table)
-   - **Autoloader Location**: Source directory for log files (e.g., `/Volumes/<path>/logs/<source>/<source_type>/`) (required when Data Source Type = "autoloader")
-   - **Table Name**: Fully qualified table name `catalog.database.table` (e.g., `<catalog>.<database>.<table>`) (required when Data Source Type = "table")
-   - **Autoloader Temp Schema Location**: Temporary location for schema inference (e.g., `/Volumes/<path>/tmp/schemas/`) (autoloader mode only)
-   - **Autoloader Temp Checkpoint Location**: Temporary location for streaming checkpoints (e.g., `/Volumes/<path>/tmp/checkpoints/`) (autoloader mode only)
-   - **Target Catalog.Database**: Target Unity Catalog location for preview tables (e.g., `<catalog>.<database>`)
-   - **Input Record Limit**: Maximum number of records to process (default: 100)
-3. Run all cells to:
-   - Install required libraries
-   - Load the YAML preset configuration
-   - Preview transformations on sample data
-   - Validate OCSF schema outputs
+1. Open your copied notebook in Databricks
+2. Update all values marked with `# CHANGE ME!!!`:
+   - **yaml_string**: Your preset YAML (inline or load from file)
+   - **For autoloader template**: `set_autoloader_location`, `set_checkpoint_temp_location_base`, `set_autoloader_temp_schema_location`
+   - **For table template**: `set_table` (temp locations are already set to empty strings)
+   - **set_input_record_limit**: Maximum number of records to process
+   - **evaluate**: Target Unity Catalog location (e.g., `catalog.database`)
+3. Run all cells to preview transformations and validate outputs
 4. Iterate on the YAML configuration as needed
 
 ### 3. Deploy to Production
@@ -110,120 +117,73 @@ Once your preset is validated and working correctly:
 1. Commit your YAML preset file
 2. Deploy using [DSL Lite](https://github.com/grp-db/dsl_lite) following its deployment instructions
 
-## Usage Example
+## Usage Examples
 
-The notebook uses Databricks widgets for interactive configuration. You can set values in the widget panel at the top of the notebook, or the code will use default values:
+### Autoloader Mode (File-based Ingestion)
 
-```python
-# Widgets are defined at the top of the notebook (defaults are empty strings - fill them in)
-dbutils.widgets.text("yaml_path", "", "YAML Preset Path")
-dbutils.widgets.dropdown("data_source", "autoloader", ["autoloader", "table"], "Data Source Type")
-dbutils.widgets.text("autoloader_location", "", "Autoloader Location")
-dbutils.widgets.text("table_name", "", "Table Name (catalog.database.table)")
-dbutils.widgets.text("autoloader_temp_schema_location", "", "Autoloader Temp Schema Location")
-dbutils.widgets.text("autoloader_temp_checkpoint_location", "", "Autoloader Temp Checkpoint Location")
-dbutils.widgets.text("target_catalog_db", "", "Target Catalog.Database")
-dbutils.widgets.text("input_record_limit", "100", "Input Record Limit")
+Use the `-autoloader` template for reading from file-based sources:
 
-# Get widget values
-yaml_path = dbutils.widgets.get("yaml_path")
-data_source = dbutils.widgets.get("data_source")
-autoloader_location = dbutils.widgets.get("autoloader_location")
-table_name = dbutils.widgets.get("table_name")
-autoloader_temp_schema_location = dbutils.widgets.get("autoloader_temp_schema_location")
-autoloader_temp_checkpoint_location = dbutils.widgets.get("autoloader_temp_checkpoint_location")
-target_catalog_db = dbutils.widgets.get("target_catalog_db")
-input_record_limit = int(dbutils.widgets.get("input_record_limit"))
-
-from dasl_client.preset_development import PreviewParameters, PreviewEngine
-
-# Load your preset YAML
-with open(yaml_path, 'r') as file:
-    yaml_string = file.read()
-
-# Configure preview parameters based on data source type
-if data_source == "autoloader":
-    ds_params = (PreviewParameters(spark) 
-        .from_autoloader() 
-        .set_autoloader_location(autoloader_location)
-        .set_autoloader_temp_schema_location(autoloader_temp_schema_location)
-        .set_checkpoint_temp_location_base(autoloader_temp_checkpoint_location)
-        .set_input_record_limit(input_record_limit)
-    )
-elif data_source == "table":
-    # Note: When using from_table(), temp locations must be set to empty strings
-    ds_params = (PreviewParameters(spark) 
-        .from_table() 
-        .set_table(table_name)
-        .set_autoloader_temp_schema_location("")
-        .set_checkpoint_temp_location_base("")
-        .set_input_record_limit(input_record_limit)
-    )
-else:
-    raise ValueError(f"Invalid data_source value: '{data_source}'. You must select either 'autoloader' or 'table' from the Data Source Type dropdown.")
-
-# Create preview engine and evaluate
-ps = PreviewEngine(spark, yaml_string, ds_params)
-ps.evaluate(target_catalog_db)
-```
-
-**Note**: Widget values can be changed without modifying code, making it easy to test different configurations or switch between presets.
-
-### Example: Using `from_table()` Mode
-
-Here's a direct example of using `from_table()` to preview a preset from an existing Delta table:
+**Note**: The paths shown below are **sample placeholder paths** for illustration only. You must replace them with your actual paths. Your paths may be different (e.g., different Volume names, directory structures, etc.). Replace all placeholders like `<path>`, `<source>`, `<source_type>`, and `<user>` with your actual values.
 
 ```python
-from dasl_client.preset_development import PreviewParameters, PreviewEngine
-
+# Load YAML - Option 1: Define inline
 yaml_string = """
-name: zeek_conn
-description: "Zeek Conn logs"
-title: "Zeek Conn"
-
-bronze:
-  skipBronzeLoading: true
-
-silver:
-  bronzeTables:
-    - name: dsl_grp.zeek.zeek_conn_silver
-  transform:
-    - name: dsl_grp.zeek.zeek_conn_silver
-      utils:
-        unreferencedColumns:
-          preserve: true
-
-gold:
-  - name: network_activity
-    input: dsl_grp.zeek.zeek_conn_silver
-    fields:
-      - name: category_uid
-        expr: CAST('4' AS INT)
-      - name: category_name
-        literal: Network Activity
-      - name: class_uid
-        expr: CAST('4001' AS INT)
-      - name: class_name
-        literal: Network Activity
-      - name: severity_id
-        expr: CAST('1' AS INT)
-      - name: severity
-        literal: Informational
+name: my_preset
+description: "My preset description"
+# ... rest of your YAML ...
 """
 
-ds_params = (PreviewParameters(spark)
-    .from_table()
-    .set_table("dsl_grp.zeek.zeek_conn_silver")
-    .set_autoloader_temp_schema_location("")
-    .set_checkpoint_temp_location_base("")
-    .set_input_record_limit(10)
+# Load YAML - Option 2: Load from file (uncomment to use)
+# with open("/Workspace/Users/<user>/preset_tool/yaml/<source>-<source_type>.yaml", 'r') as file:
+#     yaml_string = file.read()
+
+from dasl_client.preset_development import PreviewParameters, PreviewEngine
+
+ds_params = (PreviewParameters(spark) 
+    .from_autoloader()  
+    .set_autoloader_location("/Volumes/<path>/logs/<source>/<source_type>/") # CHANGE ME!!!
+    .set_checkpoint_temp_location_base("/Volumes/<path>/tmp/checkpoints/<source>-<source_type>.cp") # CHANGE ME!!!
+    .set_autoloader_temp_schema_location("/Volumes/<path>/tmp/schemas/<source>-<source_type>.json") # CHANGE ME!!!
+    .set_input_record_limit(10000) # CHANGE ME!!!
 )
 
 ps = PreviewEngine(spark, yaml_string, ds_params)
-ps.evaluate("dsl_grp.ocsf")
+ps.evaluate("catalog.database") # CHANGE ME!!!
 ```
 
-**Note**: When using `from_table()`, you must set `set_autoloader_temp_schema_location` and `set_checkpoint_temp_location_base` to empty strings (`""`) to avoid Configuration errors.
+### Table Mode (Delta Table Ingestion)
+
+Use the `-table` template for reading from existing Delta tables:
+
+**Note**: The paths and table names shown below are **sample placeholder values** for illustration only. You must replace them with your actual values. Your catalog, database, and table names will be different. Replace all placeholders like `<user>` and `catalog.database.table` with your actual Unity Catalog paths.
+
+```python
+# Load YAML - Option 1: Define inline
+yaml_string = """
+name: my_preset
+description: "My preset description"
+# ... rest of your YAML ...
+"""
+
+# Load YAML - Option 2: Load from file (uncomment to use)
+# with open("/Workspace/Users/<user>/preset_tool/yaml/<source>-<source_type>.yaml", 'r') as file:
+#     yaml_string = file.read()
+
+from dasl_client.preset_development import PreviewParameters, PreviewEngine
+
+ds_params = (PreviewParameters(spark)
+    .from_table()
+    .set_table("catalog.database.table") # CHANGE ME!!!
+    .set_checkpoint_temp_location_base("")  # Must be empty string
+    .set_autoloader_temp_schema_location("")  # Must be empty string
+    .set_input_record_limit(10000) # CHANGE ME!!!
+)
+
+ps = PreviewEngine(spark, yaml_string, ds_params)
+ps.evaluate("catalog.database") # CHANGE ME!!!
+```
+
+**Note**: When using `from_table()`, you must set `set_checkpoint_temp_location_base` and `set_autoloader_temp_schema_location` to empty strings (`""`) to avoid Configuration errors.
 
 ## Known Bugs
 
@@ -246,22 +206,34 @@ bronze:
 
 ### 2. `from_table()` Requires Empty Temp Locations
 
-**Issue**: When using `from_table()` mode, you must set `set_autoloader_temp_schema_location` and `set_checkpoint_temp_location_base` to empty strings (`""`) to avoid a Configuration error.
+**Issue**: When using `from_table()` mode, you must set `set_checkpoint_temp_location_base` and `set_autoloader_temp_schema_location` to empty strings (`""`) to avoid a Configuration error.
 
-**Workaround**: The notebook automatically handles this when you select "table" as the Data Source Type. The code sets these values to empty strings:
-
-```python
-if data_source == "table":
-    ds_params = (PreviewParameters(spark) 
-        .from_table() 
-        .set_table(table_name)
-        .set_autoloader_temp_schema_location("")  # Must be empty string
-        .set_checkpoint_temp_location_base("")     # Must be empty string
-        .set_input_record_limit(input_record_limit)
-    )
-```
+**Workaround**: The `-table` template notebook already sets these values to empty strings. If you're using the table template, this is already handled for you.
 
 **Note**: This is a limitation of the preview tool. When deploying via DSL Lite, this workaround is not needed.
+
+### 3. `UNSUPPORTED_OPERATION: data type is not supported` Error
+
+**Issue**: You may encounter `[UNSUPPORTED_OPERATION] data type is not supported` error.
+
+**Known Causes**:
+- **⚠️ CLONING NOTEBOOK TEMPLATES**: **This is the primary cause!** Cloning the template notebook can cause this error due to retained metadata, execution state, or cached schema information from the original template. The same code works perfectly when creating a fresh notebook and manually pasting the code.
+- **Databricks widgets and variables passed as parameters**: Using Databricks widgets or Python variables passed as parameters to `PreviewParameters` methods can cause this error, even when the values are correct. This appears to be a limitation with how the preview engine handles parameterized inputs.
+- Empty or invalid autoloader path (path doesn't exist or contains no data files)
+- Invalid or empty YAML
+- Empty schema (data source has no files)
+
+**Workaround**: 
+- **⚠️ DO NOT CLONE THE TEMPLATE NOTEBOOK** - Instead, create a new notebook and manually copy/paste the code from the template file. This is the most reliable workaround.
+- **Do NOT use widgets or variables for parameters** - Instead, hardcode the values directly in the method calls (e.g., `.set_autoloader_location("/Volumes/path/to/logs/")` instead of `.set_autoloader_location(widget_value)`)
+- Use the template notebooks which use hardcoded values that you can directly edit
+- If you must use variables, try creating a completely fresh notebook and manually typing the code (avoid copying from template)
+
+**Troubleshooting**:
+- **First step**: Create a new notebook (don't clone) and manually paste the template code
+- Verify the autoloader path exists and has data: `dbutils.fs.ls("/your/path")`
+- Ensure YAML is valid and not empty
+- If cloning is necessary, try clearing all cell outputs and restarting the Python kernel before running
 
 ## Related Projects
 
